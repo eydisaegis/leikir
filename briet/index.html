@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="is">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Talnaland</title>
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&amp;family=Grandstander:wght@600;800&amp;display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Talnaland: a picture book from the Icelandic coast. One light world, by choice. */
+  --mist: #E4F0EF;    /* page: fjord mist */
+  --wool: #FFFDF6;    /* cards: undyed wool */
+  --lava: #1C2632;    /* text and outlines: basalt */
+  --sea: #1B7A8A;     /* fjord teal */
+  --beak: #F26A21;    /* puffin beak: the one loud color, kept for the main action */
+  --moss: #4C8733;    /* moss: a right answer */
+  --lupine: #5852C4;  /* lupine violet */
+  --sun: #F7C331;     /* yolk: stars and hints */
+  --berry: #C2385B;   /* redcurrant: the shop */
+  --stone: #C3CDD3;   /* stepping stones and coins */
+  --pulp: #BDAE90;    /* egg carton */
+  --font-display: "Grandstander", ui-rounded, "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "Andika", ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* layout: one phone-tall stage. The puffin's speech bubble on top, the toy in the middle, one big answer row at the bottom. */
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--mist); color: var(--lava);
+  font-family: var(--font-body); line-height: 1.3;
+  -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+  overscroll-behavior: none;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+button {
+  font: inherit; color: inherit; margin: 0; padding: 0; border: 0; background: none;
+  cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+button:focus-visible, input:focus-visible { outline: .2em solid var(--lupine); outline-offset: .15em; }
+h1, h2, p { margin: 0; }
+svg { display: block; }
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.ico { width: 1.5em; height: 1.5em; flex: none; }
+
+#app { height: 100%; overflow-x: hidden; overflow-y: auto; }
+.stage {
+  width: min(100%, 38em); min-height: 100%; margin: 0 auto;
+  display: flex; flex-direction: column; gap: .75em;
+  padding: .9em max(1em, 16px) 1em;
+  font-size: clamp(15px, min(4.4vw, 2.45vh), 27px);
+}
+@supports (height: 1dvh) {
+  .stage { font-size: clamp(15px, min(4.4vw, 2.45dvh), 27px); }
+}
+
+/* ---------- shared pieces ---------- */
+.round {
+  width: 2.9em; height: 2.9em; border-radius: 50%; flex: none;
+  background: var(--wool); border: .14em solid var(--lava);
+  display: grid; place-items: center; box-shadow: 0 .2em 0 var(--lava);
+}
+.round:active { transform: translateY(.14em); box-shadow: 0 .06em 0 var(--lava); }
+
+.big {
+  min-height: 2.5em; width: 100%; border-radius: .8em;
+  border: .11em solid var(--lava); background: var(--beak); color: var(--lava);
+  font-family: var(--font-display); font-weight: 800; font-size: 1.35em;
+  box-shadow: 0 .19em 0 var(--lava);
+  display: flex; align-items: center; justify-content: center; gap: .4em; padding: .15em 1em;
+}
+.big:active { transform: translateY(.14em); box-shadow: 0 .05em 0 var(--lava); }
+.big.quiet { background: var(--wool); }
+.big .ico { width: 1.15em; height: 1.15em; stroke-width: 3.4; }
+
+.mini {
+  align-self: center; display: inline-flex; align-items: center; gap: .4em;
+  padding: .4em 1em; border-radius: 99em; border: .14em solid var(--lava);
+  background: var(--wool); font-weight: 700; box-shadow: 0 .18em 0 var(--lava);
+}
+.mini:active { transform: translateY(.12em); box-shadow: 0 .06em 0 var(--lava); }
+.mini .ico { width: 1.3em; height: 1.3em; }
+
+.talk { display: grid; grid-template-columns: 4.8em 1fr; align-items: end; gap: .9em; }
+.puffin { width: 100%; height: auto; overflow: visible; transform-origin: 50% 100%; }
+.puffin .wing { transform-box: fill-box; transform-origin: 70% 8%; }
+.puffin.cheer { animation: cheer .7s ease-out; }
+.puffin.cheer .wing { animation: flap .7s ease-in-out; }
+.puffin.tilt { animation: tilt .5s ease-in-out; }
+.bubble {
+  position: relative; min-height: 4.1em; padding: .6em .85em;
+  display: flex; align-items: center;
+  background: var(--wool); border: .13em solid var(--lava); border-radius: 1.1em;
+  font-size: 1.1em; line-height: 1.25;
+}
+.bubble::before {
+  content: ""; position: absolute; left: -.6em; bottom: 1.1em; width: 1em; height: 1em;
+  background: inherit; border-left: inherit; border-bottom: inherit;
+  transform: rotate(45deg); border-radius: 0 0 0 .2em;
+}
+.bubble b {
+  font-family: var(--font-display); font-weight: 800; font-size: 1.4em; line-height: 1;
+  white-space: nowrap;
+}
+.bubble.good { background: #E3F0D8; background: color-mix(in srgb, var(--moss) 16%, var(--wool)); border-color: var(--moss); }
+.bubble.hint { background: #FDEFC4; background: color-mix(in srgb, var(--sun) 32%, var(--wool)); }
+.yay { font-family: var(--font-display); font-weight: 800; color: var(--moss); }
+
+.choices { display: grid; grid-template-columns: repeat(var(--k, 4), 1fr); gap: .6em; }
+.choice {
+  min-height: 2.1em; border-radius: .55em; border: .075em solid var(--lava);
+  background: var(--wool); font-family: var(--font-display); font-weight: 800; font-size: 2em;
+  box-shadow: 0 .13em 0 var(--lava);
+}
+.choice:active { transform: translateY(.09em); box-shadow: 0 .04em 0 var(--lava); }
+.choice.out { opacity: .32; box-shadow: none; transform: translateY(.13em); }
+.choice.hit { background: var(--moss); color: #fff; }
+.choice.hint { background: var(--sun); animation: pulse 1s ease-in-out infinite; }
+
+/* ---------- home ---------- */
+.home-head { display: flex; align-items: center; gap: .6em; }
+.brand {
+  flex: 1; min-width: 0; font-family: var(--font-display); font-weight: 800;
+  font-size: 2.3em; line-height: 1; letter-spacing: -.015em;
+}
+.brand span { color: var(--beak); }
+.pill {
+  display: inline-flex; align-items: center; gap: .3em; padding: .22em .7em .22em .45em;
+  background: var(--wool); border: .12em solid var(--lava); border-radius: 99em;
+  font-family: var(--font-display); font-weight: 800; font-size: 1.2em;
+}
+.pill svg { width: 1.25em; height: 1.25em; }
+.lopi {
+  height: 1.8em; margin-inline: calc(-1 * max(1em, 16px));
+  border-block: .14em solid var(--lava);
+  background: var(--wool) var(--lopi-art) repeat-x center / auto 100%;
+}
+.tiles { flex: 1; max-height: 33em; display: grid; grid-template-columns: 1fr 1fr; gap: .8em; padding-bottom: .3em; }
+.tile {
+  display: grid; grid-template-rows: 1fr auto auto; justify-items: start; gap: .3em;
+  min-height: 8.2em; padding: .75em .85em .75em; text-align: left;
+  background: var(--tone); color: var(--ink, #fff);
+  border: .14em solid var(--lava); border-radius: 1.2em; box-shadow: 0 .28em 0 var(--lava);
+}
+.tile:active { transform: translateY(.2em); box-shadow: 0 .08em 0 var(--lava); }
+.tile-art { align-self: center; height: 3.5em; }
+.tile-art svg { height: 100%; width: auto; overflow: visible; }
+.tile-name { font-family: var(--font-display); font-weight: 800; font-size: 1.22em; line-height: 1.05; }
+.pips { display: flex; align-items: center; gap: .3em; font-size: .82em; font-weight: 700; }
+.pips i { width: .8em; height: .8em; border-radius: 50%; border: .15em solid currentColor; }
+.pips i.on { background: currentColor; }
+.pips span { margin-right: .25em; }
+.tile:nth-child(5) {
+  grid-column: 1 / -1; min-height: 5.6em;
+  grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 1em; align-content: center;
+}
+.tile:nth-child(5) .tile-art { grid-row: 1 / 3; }
+.tile:nth-child(5) .tile-name { align-self: end; }
+.tile:nth-child(5) .pips { align-self: start; }
+
+/* ---------- game frame ---------- */
+.bar { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .7em; }
+.steps { display: flex; justify-content: center; gap: .5em; }
+.steps i { width: 1em; height: 1em; border-radius: 50%; border: .14em solid var(--lava); background: var(--wool); }
+.steps i.done { background: var(--moss); }
+.steps i.now { background: var(--sun); transform: scale(1.3); }
+.steps i.pop { animation: pop .35s ease-out; }
+.play { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: .75em; min-height: 0; }
+.acts { display: grid; gap: .6em; padding-bottom: .25em; }
+
+/* ---------- 1: Svangi lundinn ---------- */
+.plate {
+  display: grid; gap: .3em; padding: .5em;
+  background: var(--wool); border: .14em solid var(--lava); border-radius: 1em;
+}
+.prow { display: flex; gap: .3em; }
+.prow .gap { flex: 0 0 .45em; }
+.slot {
+  flex: 1 1 0; min-width: 0; aspect-ratio: 5 / 3; position: relative;
+  display: grid; place-items: center; border-radius: .45em;
+  border: .1em dashed rgba(28, 38, 50, .2);
+}
+.plate.ten .slot { aspect-ratio: 1; }
+.slot.full { border-color: transparent; }
+.slot.want { border: .12em solid var(--beak); background: #FDEFC4; background: color-mix(in srgb, var(--sun) 32%, var(--wool)); }
+.slot.extra .fish-art { opacity: .4; }
+.slot .fish-art { width: 94%; }
+.slot .n {
+  position: absolute; right: -.1em; bottom: -.15em; min-width: 1.35em; padding: 0 .2em;
+  background: var(--sun); border: .1em solid var(--lava); border-radius: 99em;
+  font-family: var(--font-display); font-weight: 800; font-size: .72em; line-height: 1.3; text-align: center;
+}
+.plate.ten .slot .n { font-size: .6em; }
+.slot.pop .fish-art { animation: pop .28s ease-out; }
+.sea {
+  display: grid; grid-template-columns: repeat(var(--cols), 1fr); gap: .2em; padding: .5em;
+  background-color: var(--sea);
+  background-image: radial-gradient(circle at 50% -60%, transparent 62%, rgba(255, 255, 255, .16) 63% 69%, transparent 70%);
+  background-size: 3.2em 1.5em;
+  border: .14em solid var(--lava); border-radius: 1em;
+}
+.fish { min-height: 2.6em; display: grid; place-items: center; }
+.fish .fish-art { width: min(94%, 4.4em); transform: rotate(var(--tilt, 0deg)); }
+.fish.flip .fish-art { transform: scaleX(-1) rotate(var(--tilt, 0deg)); }
+.fish.gone { visibility: hidden; }
+.fish:active .fish-art { opacity: .7; }
+
+/* ---------- 2: Hvað eru margir? ---------- */
+.flash {
+  align-self: center; position: relative; width: min(100%, 15em); aspect-ratio: 1; overflow: hidden;
+  background: var(--wool); border: .14em solid var(--lava); border-radius: 1.4em; box-shadow: 0 .28em 0 var(--lava);
+}
+.flash.wide { width: 100%; max-width: 26em; aspect-ratio: 400 / 180; }
+.flash svg { width: 100%; height: 100%; }
+.flash .lid {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  background: var(--lupine); color: #fff;
+  font-family: var(--font-display); font-weight: 800; font-size: 5em; transition: opacity .16s;
+}
+.flash.open .lid { opacity: 0; }
+
+/* ---------- 3: Tíuvinir ---------- */
+.carton {
+  align-self: center; position: relative; width: min(100%, 21em);
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: .4em; padding: .55em;
+  background: var(--pulp); border: .14em solid var(--lava); border-radius: 1.1em; box-shadow: 0 .28em 0 var(--lava);
+}
+.cup {
+  aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center;
+  background: #8F8166; background: color-mix(in srgb, var(--lava) 28%, var(--pulp));
+  box-shadow: inset 0 .22em 0 rgba(28, 38, 50, .22);
+}
+.cup.want { outline: .16em dashed var(--wool); outline-offset: -.1em; animation: pulse 1s ease-in-out infinite; }
+.egg {
+  width: 62%; height: 80%; background: var(--wool); border: .13em solid var(--lava);
+  border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
+}
+.egg.gold { background: var(--sun); animation: pop .35s ease-out both; }
+.carton .lid {
+  position: absolute; inset: -.14em; display: grid; place-items: center;
+  background: var(--pulp); border: .14em solid var(--lava); border-radius: 1.1em;
+  background-image: repeating-linear-gradient(90deg, transparent 0 2.2em, rgba(28, 38, 50, .12) 2.2em 2.34em);
+  font-family: var(--font-display); font-weight: 800; font-size: 1em;
+}
+.carton .lid span {
+  font-size: 2.6em; line-height: 1; padding: .12em .5em; background: var(--wool);
+  border: .06em solid var(--lava); border-radius: .3em;
+}
+.sum {
+  font-family: var(--font-display); font-weight: 800; font-size: 2.7em; line-height: 1.1;
+  text-align: center;
+}
+.sum .q {
+  display: inline-block; min-width: 1.15em; padding: 0 .12em; color: var(--beak);
+  border-bottom: .09em solid var(--beak);
+}
+.sum .q.got { color: var(--moss); border-color: var(--moss); animation: pop .35s ease-out; }
+
+/* ---------- 4: Kindahopp ---------- */
+.field {
+  display: grid; overflow: hidden; padding-top: .7em;
+  background: #BBD6A6; background: color-mix(in srgb, var(--moss) 36%, var(--wool));
+  border: .14em solid var(--lava); border-radius: 1.2em;
+}
+.sign {
+  justify-self: center; display: flex; align-items: center; gap: .25em; margin-bottom: .3em;
+  padding: .12em .5em .02em; background: var(--wool); border: .06em solid var(--lava); border-radius: .28em;
+  box-shadow: 0 .08em 0 var(--lava);
+  font-family: var(--font-display); font-weight: 800; font-size: 2.4em; line-height: 1.1;
+}
+.sign .ico { width: .8em; height: .8em; stroke-width: 3.2; margin-bottom: .1em; }
+.stream {
+  padding: 0 .35em .7em; background-color: var(--sea); border-top: .14em solid var(--lava);
+  background-image: radial-gradient(circle at 50% -60%, transparent 62%, rgba(255, 255, 255, .16) 63% 69%, transparent 70%);
+  background-size: 3.2em 1.5em;
+}
+.stones {
+  --rowh: 3.1em; --rowgap: 1em; --head: 3em; --sw: 3.3em;
+  position: relative; display: grid; padding-top: var(--head);
+  grid-template-columns: repeat(calc(var(--n) + 1), 1fr);
+  grid-template-rows: var(--rowh) var(--rowh); row-gap: var(--rowgap);
+}
+.stone {
+  grid-row: 1; justify-self: center; position: relative; width: min(100%, 3.5em);
+  background: var(--stone); border: .11em solid var(--lava);
+  border-radius: 48% 52% 46% 54% / 56% 58% 42% 44%; box-shadow: 0 .15em 0 var(--lava);
+  font-family: var(--font-display); font-weight: 800; font-size: 1.15em;
+}
+.stone.low { grid-row: 2; }
+.stone.two { letter-spacing: -.04em; }
+.stone.start { background: var(--wool); }
+.stone.hit { background: var(--sun); }
+.stone.hint { background: var(--sun); animation: pulse 1s ease-in-out infinite; }
+.stone.shake { animation: shake .4s; }
+.stone .mark {
+  position: absolute; top: -.55em; right: -.2em; width: 1.5em; height: 1.5em; display: grid; place-items: center;
+  background: var(--beak); border: .12em solid var(--lava); border-radius: 50%;
+  font-style: normal; font-size: .62em; line-height: 1; letter-spacing: 0; animation: pop .3s ease-out;
+}
+.sheep {
+  position: absolute; z-index: 3; pointer-events: none; width: var(--sw); margin-left: calc(var(--sw) / -2);
+  left: calc((var(--i) + 1) * 100% / (var(--n) + 1));
+  top: calc(var(--head) + .62em - var(--sw) * .778);
+  transition: left .34s linear, top .34s linear;
+}
+.sheep.low { top: calc(var(--head) + var(--rowh) + var(--rowgap) + .62em - var(--sw) * .778); }
+.sheep.back svg { transform: scaleX(-1); }
+.sheep-in.hop { animation: hop .34s ease-out; }
+
+/* ---------- 5: Búðin ---------- */
+.shelf { display: flex; justify-content: center; align-items: stretch; gap: .6em; }
+.ware {
+  display: grid; justify-items: center; gap: .2em; min-width: 5.8em; padding: .45em .7em .55em;
+  background: var(--wool); border: .14em solid var(--lava); border-radius: 1em; box-shadow: 0 .22em 0 var(--lava);
+}
+.ware svg { width: 3.4em; height: 3.4em; overflow: visible; }
+.tag {
+  padding: .06em .5em 0; background: var(--sun); border: .09em solid var(--lava); border-radius: .4em;
+  font-family: var(--font-display); font-weight: 800; font-size: 1.3em; line-height: 1.2; white-space: nowrap;
+}
+.plus { align-self: center; font-family: var(--font-display); font-weight: 800; font-size: 2.2em; }
+.till {
+  display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; align-items: center; gap: .4em;
+  min-height: 6.6em; padding: .5em; width: 100%;
+  background: #F6E3DD; background: color-mix(in srgb, var(--berry) 14%, var(--wool));
+  border: .14em solid var(--lava); border-radius: 1em;
+}
+.till.fives { max-width: 16em; align-self: center; }
+.till.shake { animation: shake .4s; }
+.till-empty { align-self: center; margin: auto; opacity: .45; font-weight: 700; }
+.coin {
+  width: var(--d, 2.5em); height: var(--d, 2.5em); flex: none; border-radius: 50%;
+  display: grid; place-content: center; justify-items: center;
+  background: radial-gradient(circle at 34% 28%, #fff 0, var(--stone) 72%);
+  border: .12em solid var(--lava); box-shadow: 0 .13em 0 var(--lava);
+  font-family: var(--font-display); font-weight: 800; line-height: .9;
+}
+.coin span { font-size: 1.15em; }
+.coin small { font-size: .52em; font-family: var(--font-body); font-weight: 700; }
+.coin.c5 { --d: 2.9em; }
+.coin.c5 span { font-size: 1.35em; }
+.coin.c10 { --d: 3.3em; background: radial-gradient(circle at 34% 28%, #fff 0, #D9C690 72%); }
+.coin.c10 span { font-size: 1.45em; }
+.coin.pop { animation: pop .28s ease-out; }
+.coin:active { transform: translateY(.1em); box-shadow: 0 .04em 0 var(--lava); }
+.purse {
+  display: flex; justify-content: center; align-items: center; gap: 1.1em; padding: .5em .8em;
+  background: var(--berry); border: .14em solid var(--lava); border-radius: 1em;
+}
+.purse .coin { font-size: 1.25em; }
+
+/* ---------- end of a round ---------- */
+.end { align-items: center; justify-content: center; text-align: center; gap: .9em; }
+.burst { position: relative; width: 9em; height: 9em; display: grid; place-items: center; }
+.burst > svg { width: 100%; height: 100%; animation: land .8s cubic-bezier(.2, 1.5, .4, 1) both; }
+.burst i {
+  position: absolute; left: 50%; top: 50%; width: .9em; height: .9em; margin: -.45em;
+  background: var(--beak); border: .12em solid var(--lava); border-radius: 50%;
+  animation: fly .9s ease-out .25s both;
+}
+.burst i:nth-child(2) { --dx: -5.6em; --dy: -3.6em; }
+.burst i:nth-child(3) { --dx: 5.6em; --dy: -3.6em; background: var(--sea); }
+.burst i:nth-child(4) { --dx: -6.2em; --dy: 1.6em; background: var(--lupine); }
+.burst i:nth-child(5) { --dx: 6.2em; --dy: 1.6em; }
+.burst i:nth-child(6) { --dx: -2.6em; --dy: -6em; background: var(--moss); }
+.burst i:nth-child(7) { --dx: 2.6em; --dy: -6em; background: var(--berry); }
+.end-title { font-family: var(--font-display); font-weight: 800; font-size: 2.5em; line-height: 1; text-wrap: balance; }
+.end-line { font-size: 1.25em; }
+.end-line b, .end-up b { font-family: var(--font-display); font-weight: 800; font-size: 1.25em; }
+.end-up {
+  padding: .4em .9em; background: var(--sun); border: .13em solid var(--lava); border-radius: .8em;
+  font-size: 1.1em; font-weight: 700;
+}
+.end-acts { display: grid; grid-template-columns: 1fr 1fr; gap: .7em; width: 100%; margin-top: .6em; }
+.end .lopi { align-self: stretch; }
+
+/* ---------- parents ---------- */
+.veil { position: fixed; inset: 0; z-index: 10; display: grid; place-items: end center; background: rgba(28, 38, 50, .55); }
+.sheet {
+  width: min(100%, 34em); max-height: 94%; overflow-y: auto; display: grid; gap: .9em;
+  padding: 1em max(1em, 16px) 1.4em; background: var(--wool);
+  border: .14em solid var(--lava); border-bottom: 0; border-radius: 1.4em 1.4em 0 0;
+  font-size: clamp(15px, 4.1vw, 19px); -webkit-user-select: text; user-select: text;
+}
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 1em; }
+.sheet h2 { font-family: var(--font-display); font-weight: 800; font-size: 1.5em; line-height: 1.1; }
+.note { font-size: .92em; opacity: .8; max-width: 65ch; }
+.prow-g {
+  display: grid; grid-template-columns: 1fr auto; gap: .15em .8em; align-items: center;
+  padding-top: .8em; border-top: .1em solid rgba(28, 38, 50, .14);
+}
+.prow-g h3 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.1em; }
+.prow-g p { grid-column: 1 / -1; font-size: .9em; opacity: .8; }
+.stepper { display: flex; align-items: center; gap: .5em; font-weight: 700; }
+.stepper button {
+  width: 2.5em; height: 2.5em; border-radius: 50%; border: .12em solid var(--lava); background: var(--mist);
+  font-family: var(--font-display); font-weight: 800; font-size: 1.1em; line-height: 1;
+}
+.stepper button:disabled { opacity: .3; }
+.opt { display: flex; align-items: center; gap: .7em; padding-top: .8em; border-top: .1em solid rgba(28, 38, 50, .14); font-weight: 700; }
+.opt input { width: 1.5em; height: 1.5em; accent-color: var(--sea); flex: none; }
+.reset { display: flex; flex-wrap: wrap; align-items: center; gap: .6em; padding-top: .8em; border-top: .1em solid rgba(28, 38, 50, .14); }
+.reset .mini { align-self: auto; }
+.reset .danger { background: var(--berry); color: #fff; }
+
+/* ---------- motion ---------- */
+@keyframes pop { 0% { transform: scale(.3); } 70% { transform: scale(1.18); } 100% { transform: scale(1); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.09); } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-.28em); } 40%, 80% { transform: translateX(.28em); } }
+@keyframes hop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.3em); } }
+@keyframes cheer { 0%, 100% { transform: translateY(0) scale(1); } 30% { transform: translateY(-.9em) scale(1.04, .97); } 60% { transform: translateY(0) scale(.97, 1.03); } 80% { transform: translateY(-.3em); } }
+@keyframes flap { 0%, 100% { transform: rotate(0); } 25%, 65% { transform: rotate(38deg); } 45%, 85% { transform: rotate(-8deg); } }
+@keyframes tilt { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-9deg); } 65% { transform: rotate(6deg); } }
+@keyframes land { 0% { transform: scale(.2) rotate(-50deg); } 100% { transform: scale(1) rotate(0); } }
+@keyframes fly { 0% { transform: translate(0, 0) scale(.4); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true">
+  <defs>
+    <symbol id="s-fish" viewBox="0 0 64 28">
+      <path d="M3 14C13 3 35 3 48 11l13-7-4 10 4 10-13-7C35 25 13 25 3 14Z" fill="#DCEEF1" stroke="#1C2632" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M9 16c10 5 25 5 37-1" fill="none" stroke="#7FB9C6" stroke-width="2.6" stroke-linecap="round"/>
+      <circle cx="13" cy="11.5" r="2.3" fill="#1C2632"/>
+    </symbol>
+    <symbol id="s-star" viewBox="0 0 48 48">
+      <path d="M24 3.5l6.1 13 14.2 1.8-10.4 9.9 2.7 14.1L24 35.4l-12.6 6.9 2.7-14.1L3.7 18.3l14.2-1.8Z" fill="#F7C331" stroke="#1C2632" stroke-width="2.6" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+</svg>
+<main id="app"></main>
+<script>
+(function () {
+'use strict';
+
+/* ================= helpers ================= */
+var app = document.getElementById('app');
+function rnd(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
+  return a;
+}
+function int(v, lo, hi) { v = Math.round(Number(v)); if (!isFinite(v)) v = 0; return Math.max(lo, Math.min(hi, v)); }
+function el(tag, attrs) {
+  var n = document.createElement(tag), k;
+  if (attrs) for (k in attrs) {
+    var v = attrs[k];
+    if (v == null || v === false) continue;
+    if (k === 'class') n.className = v;
+    else if (k === 'html') n.innerHTML = v;
+    else if (k === 'text') n.textContent = v;
+    else if (k === 'style') n.style.cssText = v;
+    else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v === true ? '' : v);
+  }
+  for (var i = 2; i < arguments.length; i++) add(n, arguments[i]);
+  return n;
+}
+function add(parent, kid) {
+  if (kid == null || kid === false) return;
+  if (Array.isArray(kid)) { kid.forEach(function (x) { add(parent, x); }); return; }
+  parent.appendChild(kid.nodeType ? kid : document.createTextNode(String(kid)));
+}
+function wiggle(node, cls) { if (!node) return; node.classList.remove(cls); void node.offsetWidth; node.classList.add(cls); }
+
+var epoch = 0, timers = [];
+function later(fn, ms) {
+  var e = epoch;
+  timers.push(setTimeout(function () { if (e === epoch) fn(); }, ms));
+}
+function newScreen() { epoch++; timers.forEach(clearTimeout); timers = []; }
+function mount(node) { app.replaceChildren(node); app.scrollTop = 0; }
+
+/* ================= art ================= */
+function ico(inner) {
+  return '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>';
+}
+var ICON = {
+  home: ico('<path d="M3.5 11.5 12 4l8.5 7.5"/><path d="M5.8 10v9.5h12.4V10"/><path d="M10 19.5v-5h4v5"/>'),
+  on: ico('<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.6 7.6 0 0 1 0 11"/>'),
+  off: ico('<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="m16 9.5 5 5m0-5-5 5"/>'),
+  sliders: ico('<path d="M4 7h8m5 0h3M4 12h2m5 0h9M4 17h9m5 0h2"/><circle cx="14.5" cy="7" r="2.3"/><circle cx="8.5" cy="12" r="2.3"/><circle cx="15.5" cy="17" r="2.3"/>'),
+  eye: ico('<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>'),
+  check: ico('<path d="m5 12.5 4.5 4.5L19 7.5"/>'),
+  fwd: ico('<path d="M4 12h15m-6-6 6 6-6 6"/>'),
+  back: ico('<path d="M20 12H5m6-6-6 6 6 6"/>')
+};
+var ART = {
+  puffin: '<svg class="puffin" viewBox="0 0 140 150" aria-hidden="true">' +
+    '<path d="M50 130q-3 11-13 13h25q5-6 2-13zM76 130q-3 11-11 13h26q5-6 0-13z" fill="#F26A21" stroke="#1C2632" stroke-width="2.4" stroke-linejoin="round"/>' +
+    '<ellipse cx="62" cy="92" rx="40" ry="44" fill="#1C2632"/>' +
+    '<ellipse cx="75" cy="101" rx="25" ry="32" fill="#FFFDF6"/>' +
+    '<path class="wing" d="M42 68q-17 30 4 60 16-24 9-58z" fill="#34475C" stroke="#1C2632" stroke-width="2.4" stroke-linejoin="round"/>' +
+    '<circle cx="76" cy="44" r="29" fill="#1C2632"/>' +
+    '<ellipse cx="85" cy="50" rx="19" ry="18" fill="#FFFDF6"/>' +
+    '<path d="M100 33q27-4 38 19-13 17-38 13 6-16 0-32z" fill="#F26A21" stroke="#1C2632" stroke-width="2.4" stroke-linejoin="round"/>' +
+    '<path d="M100 33q7-1 13 0 6 16 0 33-7 0-13-1 6-16 0-32z" fill="#3E5C76" stroke="#1C2632" stroke-width="2.4" stroke-linejoin="round"/>' +
+    '<path d="M113 33q6 16 0 33" fill="none" stroke="#F7C331" stroke-width="3.2"/>' +
+    '<path d="M103 51q16-2 33 1" fill="none" stroke="#1C2632" stroke-width="1.8" stroke-linecap="round"/>' +
+    '<circle cx="100" cy="57.5" r="3.6" fill="#F7C331" stroke="#1C2632" stroke-width="1.6"/>' +
+    '<path d="M81.500 37l5.500-8 5.500 8z" fill="#3E5C76"/>' +
+    '<circle cx="87" cy="42" r="4.4" fill="#1C2632"/><circle cx="88.500" cy="40.500" r="1.400" fill="#fff"/>' +
+    '</svg>',
+  fish: '<svg class="fish-art" viewBox="0 0 64 28" aria-hidden="true"><use href="#s-fish"/></svg>',
+  star: '<svg viewBox="0 0 48 48" aria-hidden="true"><use href="#s-star"/></svg>',
+  sheep: '<svg viewBox="0 0 90 70" aria-hidden="true">' +
+    '<path d="M28 50v15M40 53v12M54 53v12M65 50v15" fill="none" stroke="#1C2632" stroke-width="5" stroke-linecap="round"/>' +
+    '<g fill="#1C2632"><circle cx="28" cy="32" r="13.500"/><circle cx="42" cy="26" r="14.500"/><circle cx="57" cy="29" r="13.500"/><circle cx="62" cy="41" r="12.500"/><circle cx="48" cy="46" r="13.500"/><circle cx="33" cy="45" r="13.500"/><circle cx="22" cy="41" r="10.500"/></g>' +
+    '<g fill="#FFFDF6"><circle cx="28" cy="32" r="11"/><circle cx="42" cy="26" r="12"/><circle cx="57" cy="29" r="11"/><circle cx="62" cy="41" r="10"/><circle cx="48" cy="46" r="11"/><circle cx="33" cy="45" r="11"/><circle cx="22" cy="41" r="8"/><ellipse cx="43" cy="37" rx="18" ry="10"/></g>' +
+    '<ellipse cx="62" cy="20" rx="6.500" ry="3.600" transform="rotate(-30 62 20)" fill="#1C2632"/>' +
+    '<ellipse cx="74" cy="29" rx="9.500" ry="12" fill="#1C2632"/><circle cx="77" cy="26" r="2.200" fill="#FFFDF6"/>' +
+    '<circle cx="68" cy="17" r="7" fill="#1C2632"/><circle cx="68" cy="17" r="4.600" fill="#FFFDF6"/>' +
+    '</svg>'
+};
+var TILE_ART = {
+  lundi: '<svg viewBox="0 0 96 60" aria-hidden="true"><use href="#s-fish" x="2" y="1" width="58" height="25.400"/><use href="#s-fish" x="36" y="18" width="58" height="25.400"/><use href="#s-fish" x="8" y="36" width="52" height="22.800"/></svg>',
+  punktar: '<svg viewBox="0 0 60 60" aria-hidden="true"><rect x="3" y="3" width="54" height="54" rx="13" fill="#FFFDF6" stroke="#1C2632" stroke-width="3"/><g fill="#5852C4"><circle cx="18" cy="18" r="6"/><circle cx="42" cy="18" r="6"/><circle cx="30" cy="30" r="6"/><circle cx="18" cy="42" r="6"/><circle cx="42" cy="42" r="6"/></g></svg>',
+  vinir: '<svg viewBox="0 0 96 60" aria-hidden="true"><rect x="2" y="24" width="92" height="34" rx="13" fill="#BDAE90" stroke="#1C2632" stroke-width="3"/><g stroke="#1C2632" stroke-width="3"><ellipse cx="21" cy="30" rx="11.500" ry="15" fill="#FFFDF6"/><ellipse cx="48" cy="30" rx="11.500" ry="15" fill="#FFFDF6"/><ellipse cx="75" cy="38" rx="11" ry="8" fill="#8F8166" stroke-dasharray="4 4"/></g></svg>',
+  kind: ART.sheep,
+  bud: '<svg viewBox="0 0 96 60" aria-hidden="true"><g font-family="Grandstander, ui-rounded, sans-serif" font-weight="800" text-anchor="middle" fill="#1C2632"><circle cx="32" cy="31" r="25" fill="#C3CDD3" stroke="#1C2632" stroke-width="3"/><text x="32" y="41" font-size="29">5</text><circle cx="73" cy="38" r="18" fill="#E6ECEF" stroke="#1C2632" stroke-width="3"/><text x="73" y="45.500" font-size="21">1</text></g></svg>'
+};
+function ware(inner) {
+  return '<svg viewBox="0 0 48 48" aria-hidden="true" stroke="#1C2632" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" fill="none">' + inner + '</svg>';
+}
+var WARES = [
+  ['epli', ware('<path d="M24 15c-7-5-16 0-16 11 0 9 6 17 11 17 2 0 3-1 5-1s3 1 5 1c5 0 11-8 11-17 0-11-9-16-16-11z" fill="#D8433B"/><path d="M24 15c0-4 1-7 4-9"/><path d="M27 9c3-4 8-3 9-2-2 4-6 5-9 2z" fill="#4C8733"/>')],
+  ['banani', ware('<path d="M7 13c1 15 12 26 31 24 3-1 4-4 2-6-12 2-21-5-26-18-2-3-6-3-7 0z" fill="#F7C331"/><path d="M7 13 5 9"/>')],
+  ['gulrót', ware('<path d="M12 20c-2-5 5-12 10-10l19 30c1 2-1 4-3 3z" fill="#F26A21"/><path d="M15 13c-4-2-6-6-5-9 3 0 6 2 7 6 0-4 2-7 5-8 2 3 1 7-2 10" fill="#4C8733"/><path d="m21 22 4-3m0 9 4-3"/>')],
+  ['ostur', ware('<path d="M5 31 33 11c6 2 10 9 10 16v11H5z" fill="#F7C331"/><path d="M5 31h38"/><circle cx="17" cy="35" r="1.500" fill="#1C2632" stroke="none"/><circle cx="29" cy="24" r="2.600" fill="#E0A81C"/><circle cx="34" cy="35" r="1.500" fill="#1C2632" stroke="none"/>')],
+  ['brauð', ware('<path d="M8 23c-4-8 6-13 16-13s20 5 16 13c-1 2-2 3-2 5v9c0 2-1 3-3 3H13c-2 0-3-1-3-3v-9c0-2-1-3-2-5z" fill="#D9A05B"/><path d="m17 17 3 5m4-6 3 5m4-4 2 4"/>')],
+  ['mjólk', ware('<path d="M13 18 19 7h10l6 11v24H13z" fill="#FFFDF6"/><path d="M13 18h22"/><path d="M13 25h22v10H13z" fill="#1B7A8A"/>')],
+  ['kex', ware('<circle cx="24" cy="24" r="17" fill="#C98B4B"/><g fill="#1C2632" stroke="none"><circle cx="17" cy="18" r="2.400"/><circle cx="28" cy="15" r="2"/><circle cx="31" cy="26" r="2.600"/><circle cx="19" cy="30" r="2.200"/><circle cx="26" cy="35" r="1.800"/></g>')],
+  ['blaðra', ware('<path d="M24 4c8 0 13 6 13 13 0 8-7 14-13 16-6-2-13-8-13-16 0-7 5-13 13-13z" fill="#C2385B"/><path d="m21 33 3 4 3-4"/><path d="M24 37c-3 3 3 5 0 9"/>')],
+  ['bolti', ware('<circle cx="24" cy="24" r="17" fill="#5852C4"/><path d="M9 17c9 5 21 5 30 0M9 31c9-5 21-5 30 0" stroke="#FFFDF6"/><circle cx="24" cy="24" r="17"/>')],
+  ['egg', ware('<path d="M24 5c8 0 13 12 13 22 0 9-6 15-13 15s-13-6-13-15C11 17 16 5 24 5z" fill="#FFFDF6"/><path d="M18 22c1-4 3-7 5-8" stroke="#C3CDD3"/>')],
+  ['pera', ware('<path d="M24 12c4 0 6 3 6 7 0 3 7 7 7 14 0 6-6 10-13 10s-13-4-13-10c0-7 7-11 7-14 0-4 2-7 6-7z" fill="#A8C545"/><path d="M24 12c0-3 1-5 3-7"/>')],
+  ['fiskur', '<svg viewBox="0 0 48 48" aria-hidden="true"><use href="#s-fish" x="1" y="14" width="46" height="20.100"/></svg>']
+];
+function lopi() {
+  var rows = ['1...1...', '.1.1.1.1', '..1...1.', '........', '...2....', '..222...', '.22.22..', '22...22.', '.22.22..', '..222...', '...2....', '........', '..1...1.', '.1.1.1.1', '1...1...'];
+  var s = 4, out = '';
+  rows.forEach(function (r, y) {
+    for (var x = 0; x < r.length; x++) {
+      if (r[x] !== '.') out += '<rect x="' + x * s + '" y="' + y * s + '" width="' + s + '" height="' + s + '" fill="' + (r[x] === '1' ? '#F26A21' : '#1B7A8A') + '"/>';
+    }
+  });
+  var w = 8 * s, h = rows.length * s;
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + (h + 8) + '" viewBox="0 -4 ' + w + ' ' + (h + 8) + '" shape-rendering="crispEdges">' + out + '</svg>';
+  return 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")';
+}
+document.documentElement.style.setProperty('--lopi-art', lopi());
+
+/* ================= saved progress ================= */
+var ORDER = ['lundi', 'punktar', 'vinir', 'kind', 'bud'];
+var KEY = 'talnaland.v1';
+var ROUND = 6;
+function fresh() {
+  var s = { v: 1, stars: 0, sound: true, auto: true, updated: 0, games: {}, log: [] };
+  ORDER.forEach(function (id) { s.games[id] = { level: 1, plays: 0, tasks: 0, first: 0, streak: 0 }; });
+  return s;
+}
+function sanitize(raw) {
+  var s = fresh();
+  if (!raw || typeof raw !== 'object') return s;
+  s.stars = int(raw.stars, 0, 99999);
+  s.sound = raw.sound !== false;
+  s.auto = raw.auto !== false;
+  s.updated = Number(raw.updated) || 0;
+  ORDER.forEach(function (id) {
+    var g = raw.games && raw.games[id];
+    if (g && typeof g === 'object') {
+      s.games[id] = { level: int(g.level, 1, 4), plays: int(g.plays, 0, 99999), tasks: int(g.tasks, 0, 999999), first: int(g.first, 0, 999999), streak: int(g.streak, 0, 9) };
+    }
+  });
+  if (Array.isArray(raw.log)) {
+    s.log = raw.log.filter(function (r) { return r && typeof r === 'object' && ORDER.indexOf(r.g) >= 0; })
+      .slice(-60).map(function (r) { return { g: r.g, l: int(r.l, 1, 4), f: int(r.f, 0, 99), n: int(r.n, 0, 99), t: Number(r.t) || 0 }; });
+  }
+  return s;
+}
+var state = fresh();
+try { state = sanitize(JSON.parse(localStorage.getItem(KEY))); } catch (e) {}
+function keep() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+function save() { state.updated = Date.now(); keep(); cloudPush(); }
+
+/* Signed-in viewers also keep their progress on their account, so it follows them between devices. */
+var cloud = { ref: null, busy: false, dirty: false, ok: false };
+function cloudInit() {
+  var c = window.claude;
+  if (!c || typeof c.use !== 'function') return;
+  Promise.all([c.use('db'), c.use('user')]).then(function (ns) {
+    var db = ns[0], user = ns[1];
+    if (!db || !user) return null;
+    return user.id().then(function (uid) {
+      if (!uid) return null;
+      var ref = db.doc('data/users/' + uid + '/talnaland');
+      return ref.get().then(function (snap) {
+        cloud.ref = ref; cloud.ok = true;
+        var remote = snap && snap.exists ? sanitize(snap.data()) : null;
+        if (remote && remote.updated > state.updated) {
+          state = remote; keep();
+          if (!session && !document.querySelector('.veil')) renderHome();
+        } else if (state.updated > 0 && (!remote || state.updated > remote.updated)) {
+          cloudPush();
+        }
+      });
+    });
+  }).catch(function () {});
+}
+function cloudPush() {
+  if (!cloud.ref) return;
+  if (cloud.busy) { cloud.dirty = true; return; }
+  cloud.busy = true; cloud.dirty = false;
+  var body;
+  try { body = JSON.parse(JSON.stringify(state)); } catch (e) { cloud.busy = false; return; }
+  cloud.ref.set(body).then(function () {
+    cloud.busy = false;
+    if (cloud.dirty) cloudPush();
+  }, function () {
+    cloud.busy = false; cloud.ref = null; cloud.ok = false;
+  });
+}
+
+/* ================= sound ================= */
+var Sound = (function () {
+  var ctx = null;
+  function ac() {
+    if (!state.sound) return null;
+    try {
+      if (!ctx) { var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; ctx = new AC(); }
+      if (ctx.state === 'suspended') { var p = ctx.resume(); if (p && p.catch) p.catch(function () {}); }
+      return ctx;
+    } catch (e) { return null; }
+  }
+  function note(freq, at, dur, vol, type) {
+    var c = ac(); if (!c) return;
+    try {
+      var t0 = c.currentTime + at, o = c.createOscillator(), g = c.createGain();
+      o.type = type || 'triangle'; o.frequency.setValueAtTime(freq, t0);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(vol, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(c.destination);
+      o.start(t0); o.stop(t0 + dur + 0.03);
+    } catch (e) {}
+  }
+  var SCALE = [0, 2, 4, 7, 9];
+  return {
+    tap: function () { note(520, 0, 0.07, 0.07); },
+    count: function (k) { var oct = Math.min(2, Math.floor((k - 1) / 5)); note(392 * Math.pow(2, (SCALE[(k - 1) % 5] + 12 * oct) / 12), 0, 0.14, 0.1); },
+    good: function () { [523.25, 659.25, 783.99].forEach(function (f, i) { note(f, i * 0.09, 0.24, 0.1); }); },
+    soft: function () { note(220, 0, 0.16, 0.08, 'sine'); note(185, 0.11, 0.22, 0.07, 'sine'); },
+    hop: function () { note(440, 0, 0.07, 0.06, 'sine'); note(660, 0.06, 0.1, 0.06, 'sine'); },
+    win: function () { [523.25, 659.25, 783.99, 1046.5].forEach(function (f, i) { note(f, i * 0.12, 0.3, 0.11); }); note(1318.5, 0.52, 0.5, 0.09); }
+  };
+})();
+
+/* ================= the round ================= */
+var session = null;
+var ui = { bubble: null, puffin: null, steps: null };
+var PRAISE = ['Rétt!', 'Frábært!', 'Vel gert!', 'Flott hjá þér!', 'Glæsilegt!', 'Snilld!'];
+
+function talkRow(html) {
+  var holder = el('div', { class: 'mascot', html: ART.puffin });
+  ui.puffin = holder.firstChild;
+  ui.bubble = el('div', { class: 'bubble', 'aria-live': 'polite', html: '<span>' + html + '</span>' });
+  return el('div', { class: 'talk' }, holder, ui.bubble);
+}
+function say(html, tone) {
+  if (!ui.bubble) return;
+  ui.bubble.className = 'bubble' + (tone ? ' ' + tone : '');
+  ui.bubble.innerHTML = '<span>' + html + '</span>';
+}
+var api = {
+  later: later,
+  locked: function () { return !session || session.locked; },
+  tries: function () { return session ? session.tries : 0; },
+  nudge: function (html) { say(html, 'hint'); wiggle(ui.puffin, 'tilt'); },
+  wrong: function (html) {
+    session.tries++;
+    Sound.soft();
+    say(html || 'Prófaðu aftur.', 'hint');
+    wiggle(ui.puffin, 'tilt');
+    return session.tries;
+  },
+  right: function (html, wait) {
+    if (session.locked) return;
+    session.locked = true;
+    if (session.tries === 0) session.first++;
+    Sound.good();
+    say('<span class="yay">' + pick(PRAISE) + '</span> ' + (html || ''), 'good');
+    wiggle(ui.puffin, 'cheer');
+    var pip = ui.steps && ui.steps.children[session.i];
+    if (pip) pip.className = 'done pop';
+    later(function () { session.i++; nextTask(); }, wait || 1900);
+  }
+};
+
+function startGame(id) {
+  var g = GAMES[id];
+  session = { game: g, level: state.games[id].level, i: 0, n: ROUND, first: 0, tries: 0, locked: false, task: null, lastKey: null };
+  nextTask();
+}
+function nextTask() {
+  if (!session) return;
+  if (session.i >= session.n) { finish(); return; }
+  var task, guard = 0;
+  do { task = session.game.make(session.level); guard++; } while (task.key === session.lastKey && guard < 12);
+  session.task = task; session.lastKey = task.key; session.tries = 0; session.locked = false;
+  renderTask();
+}
+function soundButton() {
+  var b = el('button', { class: 'round', type: 'button' });
+  function paint() { b.innerHTML = state.sound ? ICON.on : ICON.off; b.setAttribute('aria-label', state.sound ? 'Slökkva á hljóði' : 'Kveikja á hljóði'); }
+  b.addEventListener('click', function () { state.sound = !state.sound; save(); paint(); Sound.tap(); });
+  paint();
+  return b;
+}
+function renderTask() {
+  newScreen();
+  var g = session.game, t = session.task;
+  var steps = el('div', { class: 'steps', role: 'img', 'aria-label': 'Verkefni ' + (session.i + 1) + ' af ' + session.n });
+  for (var k = 0; k < session.n; k++) steps.appendChild(el('i', { class: k < session.i ? 'done' : (k === session.i ? 'now' : '') }));
+  ui.steps = steps;
+  var v = g.view(t, api);
+  var stage = el('div', { class: 'stage game' },
+    el('div', { class: 'bar' },
+      el('button', { class: 'round', type: 'button', 'aria-label': 'Heim', html: ICON.home, onclick: function () { Sound.tap(); renderHome(); } }),
+      steps, soundButton()),
+    talkRow(v.ask),
+    el('div', { class: 'play' }, v.body),
+    v.acts ? el('div', { class: 'acts' }, v.acts) : null);
+  mount(stage);
+  if (v.ready) v.ready();
+}
+function finish() {
+  var id = session.game.id, g = state.games[id], n = session.n, f = session.first, up = 0;
+  g.plays++; g.tasks += n; g.first += f;
+  state.stars++;
+  if (state.auto) {
+    if (f === n || (f >= n - 1 && g.streak >= 1)) { g.streak = 0; if (g.level < 4) { g.level++; up = g.level; } }
+    else if (f >= n - 1) g.streak = 1;
+    else { g.streak = 0; if (f <= 2 && g.level > 1) g.level--; }
+  }
+  state.log.push({ g: id, l: session.level, f: f, n: n, t: Date.now() });
+  if (state.log.length > 60) state.log = state.log.slice(-60);
+  save();
+  renderEnd(up);
+}
+function starWord(n) { return (n % 10 === 1 && n % 100 !== 11) ? 'stjörnu' : 'stjörnur'; }
+function renderEnd(up) {
+  newScreen();
+  var g = session.game;
+  session.locked = true;
+  var stage = el('div', { class: 'stage end' },
+    el('div', { class: 'burst', 'aria-hidden': 'true', html: ART.star + '<i></i><i></i><i></i><i></i><i></i><i></i>' }),
+    el('h1', { class: 'end-title', text: 'Lotan búin!' }),
+    el('p', { class: 'end-line', html: 'Þú fékkst stjörnu! Nú áttu <b>' + state.stars + '</b> ' + starWord(state.stars) + '.' }),
+    up ? el('p', { class: 'end-up', html: g.name + ': þrep <b>' + up + '</b> er opið!' }) : null,
+    el('div', { class: 'end-acts' },
+      el('button', { class: 'big', type: 'button', text: 'Aftur', onclick: function () { Sound.tap(); startGame(g.id); } }),
+      el('button', { class: 'big quiet', type: 'button', text: 'Heim', onclick: function () { Sound.tap(); renderHome(); } })));
+  mount(stage);
+  Sound.win();
+}
+
+/* ================= shared answer row ================= */
+function options(correct, k, lo, hi) {
+  var set = [correct];
+  [[correct - 1, correct + 1], [correct - 2, correct + 2], [correct - 3, correct + 3], [correct - 4, correct + 4]].forEach(function (pair) {
+    shuffle(pair).forEach(function (v) { if (set.length < k && v >= lo && v <= hi && set.indexOf(v) < 0) set.push(v); });
+  });
+  return set.sort(function (a, b) { return a - b; });
+}
+function choiceRow(opts, onPick) {
+  var row = el('div', { class: 'choices', style: '--k:' + opts.length });
+  opts.forEach(function (v) {
+    var b = el('button', { class: 'choice', type: 'button', text: String(v) });
+    b.addEventListener('click', function () { if (api.locked() || b.disabled) return; onPick(v, b); });
+    row.appendChild(b);
+  });
+  row.hint = function (v) {
+    Array.prototype.forEach.call(row.children, function (b) { if (b.textContent === String(v)) b.classList.add('hint'); });
+  };
+  return row;
+}
+
+/* ================= the five games ================= */
+var DICE = {
+  1: [[.5, .5]], 2: [[.3, .3], [.7, .7]], 3: [[.26, .26], [.5, .5], [.74, .74]],
+  4: [[.3, .3], [.7, .3], [.3, .7], [.7, .7]], 5: [[.27, .27], [.73, .27], [.5, .5], [.27, .73], [.73, .73]],
+  6: [[.3, .24], [.7, .24], [.3, .5], [.7, .5], [.3, .76], [.7, .76]]
+};
+function dot(x, y, r, fill) {
+  return '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + r + '" fill="' + fill + '" stroke="#1C2632" stroke-width="3"/>';
+}
+function dotsSvg(t) {
+  var s = '', i;
+  if (t.kind === 'frame') {
+    for (i = 0; i < 10; i++) {
+      var x = 12 + (i % 5) * 76, y = 12 + Math.floor(i / 5) * 80;
+      s += '<rect x="' + x + '" y="' + y + '" width="72" height="76" rx="13" fill="none" stroke="#1C2632" stroke-opacity=".28" stroke-width="3"/>';
+      if (i < t.n) s += dot(x + 36, y + 38, 25, '#5852C4');
+    }
+    return '<svg viewBox="0 0 400 180" aria-hidden="true">' + s + '</svg>';
+  }
+  if (t.kind === 'two') {
+    DICE[t.a].forEach(function (p) { s += dot(14 + p[0] * 172, 4 + p[1] * 172, 21, '#5852C4'); });
+    DICE[t.b].forEach(function (p) { s += dot(214 + p[0] * 172, 4 + p[1] * 172, 21, '#F26A21'); });
+    return '<svg viewBox="0 0 400 180" aria-hidden="true">' + s + '</svg>';
+  }
+  (t.kind === 'dice' ? DICE[t.n] : t.spots).forEach(function (p) { s += dot(p[0] * 200, p[1] * 200, 23, '#5852C4'); });
+  return '<svg viewBox="0 0 200 200" aria-hidden="true">' + s + '</svg>';
+}
+function scatter(n) {
+  return shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8]).slice(0, n).map(function (c) {
+    return [.22 + (c % 3) * .28 + (Math.random() - .5) * .1, .22 + Math.floor(c / 3) * .28 + (Math.random() - .5) * .1];
+  });
+}
+
+var GAMES = {
+  /* ---- 1. counting out a set ---- */
+  lundi: {
+    id: 'lundi', name: 'Svangi lundinn', tone: 'var(--sea)', ink: '#fff',
+    levels: ['Telja 1–5', 'Telja upp í 10', 'Telja upp í 15', 'Telja upp í 20'],
+    make: function (level) {
+      var c = [null, { lo: 1, hi: 5, sea: 8, cols: 4, pc: 5 }, { lo: 3, hi: 10, sea: 12, cols: 6, pc: 5 }, { lo: 8, hi: 15, sea: 18, cols: 6, pc: 10 }, { lo: 11, hi: 20, sea: 24, cols: 8, pc: 10 }][level];
+      var n = rnd(c.lo, c.hi);
+      return { key: 'l' + n, answer: n, n: n, sea: c.sea, cols: c.cols, pc: c.pc };
+    },
+    view: function (t, api) {
+      var given = 0, mode = 0, taken = [], fishes = [];
+      var rows = Math.ceil(t.sea / t.pc);
+      var plate = el('div', { class: 'plate' + (t.pc === 10 ? ' ten' : ''), role: 'group', 'aria-label': 'Diskur lundans' });
+      var sea = el('div', { class: 'sea', style: '--cols:' + t.cols, role: 'group', 'aria-label': 'Sjórinn' });
+      function draw(freshAt) {
+        plate.replaceChildren();
+        for (var r = 0; r < rows; r++) {
+          var row = el('div', { class: 'prow' });
+          for (var c = 0; c < t.pc; c++) {
+            var k = r * t.pc + c;
+            if (t.pc === 10 && c === 5) row.appendChild(el('i', { class: 'gap' }));
+            var want = mode === 2 && k < t.n;
+            if (k < given) {
+              var s = el('button', {
+                class: 'slot full' + (want ? ' want' : '') + (mode === 2 && k >= t.n ? ' extra' : '') + (k === freshAt ? ' pop' : ''),
+                type: 'button', 'aria-label': 'Taka síli til baka',
+                html: ART.fish + (mode ? '<span class="n">' + (k + 1) + '</span>' : '')
+              });
+              s.addEventListener('click', back);
+              row.appendChild(s);
+            } else {
+              row.appendChild(el('i', { class: 'slot' + (want ? ' want' : '') }));
+            }
+          }
+          plate.appendChild(row);
+        }
+      }
+      function give(i) {
+        if (api.locked() || fishes[i].disabled) return;
+        fishes[i].disabled = true; fishes[i].classList.add('gone');
+        taken.push(i); given++;
+        Sound.count(given);
+        draw(given - 1);
+      }
+      function back() {
+        if (api.locked() || !given) return;
+        var i = taken.pop();
+        fishes[i].disabled = false; fishes[i].classList.remove('gone');
+        given--;
+        Sound.tap();
+        draw(-1);
+      }
+      for (var i = 0; i < t.sea; i++) {
+        (function (i) {
+          var b = el('button', { class: 'fish' + (Math.random() < .5 ? ' flip' : ''), type: 'button', 'aria-label': 'Síli í sjónum', html: ART.fish, style: '--tilt:' + rnd(-9, 9) + 'deg' });
+          b.addEventListener('click', function () { give(i); });
+          fishes.push(b); sea.appendChild(b);
+        })(i);
+      }
+      draw(-1);
+      var check = el('button', { class: 'big', type: 'button', html: ICON.check + '<span>Tilbúið</span>' });
+      check.addEventListener('click', function () {
+        if (api.locked()) return;
+        if (!given) { api.nudge('Ýttu á sílin í sjónum.'); return; }
+        if (given === t.n) {
+          mode = 1; draw(-1);
+          api.right('<b>' + t.n + '</b> síli. Takk!');
+        } else {
+          var tries = api.wrong('Þetta ' + (given === 1 ? 'er' : 'eru') + ' <b>' + given + '</b>. Lundinn vill <b>' + t.n + '</b>.');
+          mode = tries >= 2 ? 2 : 1;
+          draw(-1);
+        }
+      });
+      return { ask: 'Gefðu lundanum <b>' + t.n + '</b> síli.', body: [plate, sea], acts: check };
+    }
+  },
+
+  /* ---- 2. seeing how many without counting ---- */
+  punktar: {
+    id: 'punktar', name: 'Hvað eru margir?', tone: 'var(--lupine)', ink: '#fff',
+    levels: ['1–4 punktar', 'Teningamynstur, 1–6', 'Tíurammi, upp í 10', 'Tveir hópar, upp í 10'],
+    make: function (level) {
+      var n;
+      if (level === 1) { n = rnd(1, 4); return { key: 'p' + n, answer: n, n: n, kind: 'scatter', spots: scatter(n), ms: 2600, k: 3 }; }
+      if (level === 2) { n = rnd(1, 6); return { key: 'p' + n, answer: n, n: n, kind: 'dice', ms: 2000, k: 4 }; }
+      if (level === 3) { n = rnd(4, 10); return { key: 'p' + n, answer: n, n: n, kind: 'frame', ms: 2600, k: 4 }; }
+      var a = rnd(1, 5), b = rnd(1, 5);
+      return { key: 'p' + a + '+' + b, answer: a + b, n: a + b, a: a, b: b, kind: 'two', ms: 3000, k: 4 };
+    },
+    view: function (t, api) {
+      var wide = t.kind === 'frame' || t.kind === 'two';
+      var card = el('div', { class: 'flash' + (wide ? ' wide' : ''), html: dotsSvg(t) + '<div class="lid" aria-hidden="true">?</div>' });
+      var stay = false, showId = 0;
+      function show(ms) {
+        if (stay) return;
+        var id = ++showId;
+        card.classList.add('open');
+        api.later(function () { if (id === showId && !stay) card.classList.remove('open'); }, ms);
+      }
+      function keepOpen() { stay = true; card.classList.add('open'); }
+      var again = el('button', { class: 'mini', type: 'button', html: ICON.eye + '<span>Sjá aftur</span>' });
+      again.addEventListener('click', function () { if (api.locked() || stay) return; Sound.tap(); show(t.ms); });
+      var row = choiceRow(options(t.n, t.k, 1, 10), function (v, b) {
+        if (v === t.n) {
+          keepOpen(); b.classList.add('hit');
+          api.right('Þetta ' + (t.n === 1 ? 'er' : 'eru') + ' <b>' + t.n + '</b>.');
+        } else {
+          b.disabled = true; b.classList.add('out');
+          if (api.tries() + 1 >= 2) { api.wrong('Teldu punktana.'); keepOpen(); row.hint(t.n); }
+          else { api.wrong('Skoðaðu aftur.'); show(Math.round(t.ms * 1.6)); }
+        }
+      });
+      return {
+        ask: 'Hvað eru margir punktar?', body: [card, again], acts: row,
+        ready: function () { api.later(function () { show(t.ms); }, 450); }
+      };
+    }
+  },
+
+  /* ---- 3. number bonds ---- */
+  vinir: {
+    id: 'vinir', name: 'Tíuvinir', tone: 'var(--sun)', ink: 'var(--lava)',
+    levels: ['Saman 5', 'Saman 10, með eggjabakka', 'Saman 6–9', 'Tíuvinir eftir minni'],
+    make: function (level) {
+      var total, have, closed = false;
+      if (level === 1) { total = 5; have = rnd(1, 4); }
+      else if (level === 2) { total = 10; have = rnd(1, 9); }
+      else if (level === 3) { total = rnd(6, 9); have = rnd(1, total - 1); }
+      else { total = 10; have = rnd(1, 9); closed = true; }
+      return { key: 'v' + total + '-' + have, answer: total - have, total: total, have: have, miss: total - have, closed: closed };
+    },
+    view: function (t, api) {
+      var carton = el('div', { class: 'carton', role: 'img', 'aria-label': t.closed ? 'Lokaður eggjabakki með 10 hólfum' : 'Eggjabakki: ' + t.have + ' egg af ' + t.total });
+      var cups = [], lid = null;
+      for (var i = 0; i < t.total; i++) {
+        var cup = el('div', { class: 'cup' }, i < t.have ? el('i', { class: 'egg' }) : null);
+        cups.push(cup); carton.appendChild(cup);
+      }
+      if (t.closed) { lid = el('div', { class: 'lid', html: '<span>10</span>' }); carton.appendChild(lid); }
+      function open() { if (lid) { carton.removeChild(lid); lid = null; } }
+      var sum = el('div', { class: 'sum', html: t.have + ' + <span class="q">?</span> = ' + t.total });
+      var row = choiceRow(options(t.miss, 4, 1, t.total === 5 ? 5 : 9), function (v, b) {
+        if (v === t.miss) {
+          open(); b.classList.add('hit');
+          cups.slice(t.have).forEach(function (c, j) {
+            c.classList.remove('want');
+            var e = el('i', { class: 'egg gold' }); e.style.animationDelay = (j * 80) + 'ms'; c.appendChild(e);
+          });
+          sum.innerHTML = t.have + ' + <span class="q got">' + t.miss + '</span> = ' + t.total;
+          api.right(t.total === 10 ? '<b>' + t.have + '</b> og <b>' + t.miss + '</b> eru tíuvinir!' : '<b>' + t.have + '</b> og <b>' + t.miss + '</b> eru saman <b>' + t.total + '</b>!', 2300);
+        } else {
+          b.disabled = true; b.classList.add('out');
+          open();
+          if (api.tries() + 1 >= 2) {
+            cups.slice(t.have).forEach(function (c) { c.classList.add('want'); });
+            api.wrong('Teldu tómu hólfin.'); row.hint(t.miss);
+          } else api.wrong(t.closed ? 'Kíktu í bakkann. Prófaðu aftur.' : 'Prófaðu aftur.');
+        }
+      });
+      return { ask: t.closed ? '<b>' + t.have + '</b> og hvað eru <b>10</b>?' : 'Hvað vantar mörg egg?', body: [carton, sum], acts: row };
+    }
+  },
+
+  /* ---- 4. adding and taking away on a number line ---- */
+  kind: {
+    id: 'kind', name: 'Kindahopp', tone: 'var(--moss)', ink: '#fff',
+    levels: ['Plús 1–2, upp í 5', 'Plús, upp í 10', 'Plús og mínus, upp í 10', 'Plús og mínus, upp í 20'],
+    make: function (level) {
+      var lo = 0, n, start, d;
+      if (level === 1) { n = 6; d = rnd(1, 2); start = rnd(0, 5 - d); }
+      else if (level === 2) { n = 11; d = rnd(1, 3); start = rnd(0, 10 - d); }
+      else if (level === 3) {
+        n = 11; d = rnd(1, 4);
+        if (Math.random() < .5) { start = rnd(d, 10); d = -d; } else start = rnd(0, 10 - d);
+      } else {
+        n = 9; d = rnd(1, 5);
+        if (Math.random() < .5) { start = rnd(Math.max(d, 8), 20); d = -d; } else start = rnd(6, 20 - d);
+        var a = Math.min(start, start + d), b = Math.max(start, start + d);
+        lo = rnd(Math.max(0, b - 8), Math.min(a, 12));
+      }
+      return { key: 'k' + start + (d > 0 ? '+' : '') + d, answer: start + d, lo: lo, n: n, start: start, d: d, end: start + d };
+    },
+    view: function (t, api) {
+      var fwd = t.d > 0, k = Math.abs(t.d), op = fwd ? '+' : '−';
+      var btns = [];
+      var stones = el('div', { class: 'stones', style: '--n:' + t.n });
+      function at(v) { return v - t.lo; }
+      var sheep = el('div', { class: 'sheep' + (fwd ? '' : ' back'), html: '<div class="sheep-in">' + ART.sheep + '</div>' });
+      function place(i) { sheep.style.setProperty('--i', i); sheep.classList.toggle('low', i % 2 === 1); }
+      function hopTo(i) { place(i); wiggle(sheep.firstChild, 'hop'); Sound.hop(); }
+      function marks() {
+        for (var s = 1; s <= k; s++) {
+          var b = btns[at(t.start + (fwd ? s : -s))];
+          if (b && !b.querySelector('.mark')) b.appendChild(el('i', { class: 'mark', text: String(s) }));
+        }
+      }
+      var ask = 'Kindin hoppar <b>' + k + '</b> ' + (fwd ? 'áfram' : 'til baka') + '. Hvar lendir hún?';
+      function tap(v, b) {
+        if (api.locked()) return;
+        if (v === t.start) { wiggle(sheep.firstChild, 'hop'); api.nudge(ask); return; }
+        if (v === t.end) {
+          btns.forEach(function (x) { x.classList.remove('hint'); });
+          b.classList.add('hit');
+          for (var s = 1; s <= k; s++) {
+            (function (s) { api.later(function () { hopTo(at(t.start + (fwd ? s : -s))); }, (s - 1) * 380 + 60); })(s);
+          }
+          api.right('<b>' + t.start + ' ' + op + ' ' + k + ' = ' + t.end + '</b>', k * 380 + 1700);
+        } else {
+          wiggle(b, 'shake');
+          var tries = api.wrong('Teldu hoppin.');
+          marks();
+          if (tries >= 2) btns[at(t.end)].classList.add('hint');
+        }
+      }
+      for (var i = 0; i < t.n; i++) {
+        (function (i) {
+          var v = t.lo + i;
+          var b = el('button', {
+            class: 'stone' + (i % 2 ? ' low' : '') + (v === t.start ? ' start' : '') + (v > 9 ? ' two' : ''),
+            type: 'button', text: String(v), 'aria-label': 'Steinn ' + v, style: 'grid-column:' + (i + 1) + ' / span 2'
+          });
+          b.addEventListener('click', function () { tap(v, b); });
+          btns.push(b); stones.appendChild(b);
+        })(i);
+      }
+      place(at(t.start));
+      stones.appendChild(sheep);
+      var field = el('div', { class: 'field' },
+        el('div', { class: 'sign', 'aria-hidden': 'true', html: fwd ? '<span>+' + k + '</span>' + ICON.fwd : ICON.back + '<span>−' + k + '</span>' }),
+        el('div', { class: 'stream' }, stones));
+      return { ask: ask, body: field, acts: null };
+    }
+  },
+
+  /* ---- 5. paying with coins ---- */
+  bud: {
+    id: 'bud', name: 'Búðin', tone: 'var(--berry)', ink: '#fff',
+    levels: ['1–5 kr. með krónum', 'Tvær vörur, upp í 10 kr.', '5 kr. peningur, upp í 12 kr.', '1, 5 og 10 kr., upp í 20 kr.'],
+    make: function (level) {
+      var w = shuffle(WARES), a, b;
+      if (level === 1) { a = rnd(1, 5); return { key: 'b' + a, answer: a, items: [{ w: w[0], p: a }], total: a, coins: [1], cap: 10 }; }
+      if (level === 2) { a = rnd(1, 5); b = rnd(1, Math.min(5, 10 - a)); return { key: 'b' + a + '+' + b, answer: a + b, items: [{ w: w[0], p: a }, { w: w[1], p: b }], total: a + b, coins: [1], cap: 15 }; }
+      if (level === 3) { a = rnd(5, 12); return { key: 'b' + a, answer: a, items: [{ w: w[0], p: a }], total: a, coins: [5, 1], cap: 16 }; }
+      a = rnd(4, 12); b = rnd(3, Math.min(9, 20 - a));
+      return { key: 'b' + a + '+' + b, answer: a + b, items: [{ w: w[0], p: a }, { w: w[1], p: b }], total: a + b, coins: [10, 5, 1], cap: 20 };
+    },
+    view: function (t, api) {
+      var paid = [];
+      var shelf = el('div', { class: 'shelf' });
+      t.items.forEach(function (it, i) {
+        if (i) shelf.appendChild(el('span', { class: 'plus', 'aria-hidden': 'true', text: '+' }));
+        shelf.appendChild(el('div', { class: 'ware', role: 'img', 'aria-label': it.w[0] + ', ' + it.p + ' krónur', html: it.w[1] + '<span class="tag">' + it.p + ' kr.</span>' }));
+      });
+      var till = el('div', { class: 'till' + (t.coins.length === 1 ? ' fives' : ''), role: 'group', 'aria-label': 'Borðið' });
+      function coin(v, extra, label) {
+        return el('button', { class: 'coin c' + v + (extra ? ' ' + extra : ''), type: 'button', 'aria-label': label, html: '<span>' + v + '</span><small>kr.</small>' });
+      }
+      function draw(freshAt) {
+        till.replaceChildren();
+        if (!paid.length) { till.appendChild(el('span', { class: 'till-empty', text: 'Borðið' })); return; }
+        paid.forEach(function (v, i) {
+          var c = coin(v, i === freshAt ? 'pop' : '', 'Taka ' + v + ' kr. til baka');
+          c.addEventListener('click', function () { if (api.locked()) return; paid.splice(i, 1); Sound.tap(); draw(-1); });
+          till.appendChild(c);
+        });
+      }
+      function put(v) {
+        if (api.locked()) return;
+        if (paid.length >= t.cap) { wiggle(till, 'shake'); return; }
+        var i = 0;
+        while (i < paid.length && paid[i] >= v) i++;
+        paid.splice(i, 0, v);
+        Sound.count(paid.length);
+        draw(i);
+      }
+      var purse = el('div', { class: 'purse', role: 'group', 'aria-label': 'Veskið' });
+      t.coins.forEach(function (v) {
+        var c = coin(v, '', 'Setja ' + v + ' kr. á borðið');
+        c.addEventListener('click', function () { put(v); });
+        purse.appendChild(c);
+      });
+      var pay = el('button', { class: 'big', type: 'button', html: ICON.check + '<span>Borga</span>' });
+      pay.addEventListener('click', function () {
+        if (api.locked()) return;
+        var sum = paid.reduce(function (x, y) { return x + y; }, 0);
+        if (!sum) { api.nudge('Settu peninga á borðið.'); return; }
+        if (sum === t.total) {
+          api.right(t.items.length > 1 ? '<b>' + t.items[0].p + ' + ' + t.items[1].p + ' = ' + t.total + '</b> kr. Takk fyrir!' : '<b>' + t.total + '</b> kr. Takk fyrir!', 2100);
+        } else {
+          var msg = sum < t.total ? 'Of lítið. Bættu við.' : 'Of mikið. Taktu til baka.';
+          if (api.tries() + 1 >= 2) msg = 'Þú ert með <b>' + sum + '</b> kr. Þetta kostar <b>' + t.total + '</b> kr.';
+          api.wrong(msg);
+          wiggle(till, 'shake');
+        }
+      });
+      draw(-1);
+      return {
+        ask: t.items.length > 1 ? 'Hvað kostar þetta samtals? Borgaðu!' : 'Þetta kostar <b>' + t.total + '</b> kr. Borgaðu!',
+        body: [shelf, till, purse], acts: pay
+      };
+    }
+  }
+};
+
+/* ================= home ================= */
+function tile(g) {
+  var lv = state.games[g.id].level, pips = '<span>Þrep ' + lv + '</span>';
+  for (var i = 1; i <= 4; i++) pips += '<i' + (i <= lv ? ' class="on"' : '') + '></i>';
+  return el('button', {
+    class: 'tile', type: 'button', style: '--tone:' + g.tone + ';--ink:' + g.ink,
+    'aria-label': g.name + ', þrep ' + lv + ' af 4',
+    onclick: function () { Sound.tap(); startGame(g.id); }
+  },
+    el('span', { class: 'tile-art', html: TILE_ART[g.id] }),
+    el('span', { class: 'tile-name', text: g.name }),
+    el('span', { class: 'pips', 'aria-hidden': 'true', html: pips }));
+}
+function renderHome() {
+  newScreen();
+  session = null;
+  var stage = el('div', { class: 'stage home' },
+    el('header', { class: 'home-head' },
+      el('h1', { class: 'brand', html: 'Talna<span>land</span>' }),
+      el('div', { class: 'pill', role: 'img', 'aria-label': state.stars + ' ' + starWord(state.stars), html: ART.star + '<span>' + state.stars + '</span>' }),
+      el('button', { class: 'round', type: 'button', 'aria-label': 'Fyrir foreldra', html: ICON.sliders, onclick: openParents })),
+    el('div', { class: 'lopi', 'aria-hidden': 'true' }),
+    talkRow('Hæ! Veldu leik.'),
+    el('nav', { class: 'tiles', 'aria-label': 'Leikir' }, ORDER.map(function (id) { return tile(GAMES[id]); })));
+  mount(stage);
+}
+
+/* ================= parents ================= */
+function openParents() {
+  Sound.tap();
+  var veil = el('div', { class: 'veil', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Fyrir foreldra' });
+  var sheet = el('div', { class: 'sheet' });
+  var confirming = false;
+  function close() { document.removeEventListener('keydown', onKey); if (veil.parentNode) veil.parentNode.removeChild(veil); renderHome(); }
+  function onKey(e) { if (e.key === 'Escape') close(); }
+  function gameRow(id) {
+    var g = GAMES[id], s = state.games[id];
+    var stats = s.plays ? 'Lotur: ' + s.plays + ' · Rétt í fyrstu tilraun: ' + Math.round(100 * s.first / Math.max(1, s.tasks)) + '%' : 'Ekki spilað enn';
+    function step(d) { return function () { s.level = int(s.level + d, 1, 4); s.streak = 0; save(); paint(); }; }
+    return el('div', { class: 'prow-g' },
+      el('h3', { text: g.name }),
+      el('div', { class: 'stepper' },
+        el('button', { type: 'button', text: '−', 'aria-label': g.name + ': lækka þrep', disabled: s.level <= 1, onclick: step(-1) }),
+        el('span', { text: 'Þrep ' + s.level }),
+        el('button', { type: 'button', text: '+', 'aria-label': g.name + ': hækka þrep', disabled: s.level >= 4, onclick: step(1) })),
+      el('p', { text: g.levels[s.level - 1] + ' · ' + stats }));
+  }
+  function option(id, label, on, set) {
+    var box = el('input', { type: 'checkbox', id: id });
+    box.checked = on;
+    box.addEventListener('change', function () { set(box.checked); save(); });
+    return el('label', { class: 'opt', for: id }, box, el('span', { text: label }));
+  }
+  function paint() {
+    var keepTop = sheet.scrollTop;
+    sheet.replaceChildren(
+      el('div', { class: 'sheet-head' }, el('h2', { text: 'Fyrir foreldra' }), el('button', { class: 'mini', type: 'button', text: 'Loka', onclick: close })),
+      el('p', { class: 'note', text: 'Hver lota er 6 verkefni og gefur eina stjörnu. Þrepið hækkar þegar vel gengur og lækkar ef verkefnin reynast of erfið.' }));
+    ORDER.forEach(function (id) { sheet.appendChild(gameRow(id)); });
+    sheet.appendChild(option('opt-sound', 'Hljóð', state.sound, function (v) { state.sound = v; }));
+    sheet.appendChild(option('opt-auto', 'Þrep breytast sjálfkrafa', state.auto, function (v) { state.auto = v; }));
+    var reset = el('div', { class: 'reset' });
+    if (confirming) {
+      add(reset, [
+        el('span', { text: 'Eyða stjörnum og framvindu?' }),
+        el('button', { class: 'mini danger', type: 'button', text: 'Já, eyða', onclick: function () { var snd = state.sound; state = fresh(); state.sound = snd; confirming = false; save(); paint(); } }),
+        el('button', { class: 'mini', type: 'button', text: 'Hætta við', onclick: function () { confirming = false; paint(); } })]);
+    } else {
+      reset.appendChild(el('button', { class: 'mini', type: 'button', text: 'Byrja upp á nýtt', onclick: function () { confirming = true; paint(); } }));
+    }
+    sheet.appendChild(reset);
+    sheet.appendChild(el('p', { class: 'note', text: cloud.ok ? 'Framvindan vistast á aðganginum þínum og fylgir þér milli tækja.' : 'Framvindan vistast í þessu tæki.' }));
+    sheet.scrollTop = keepTop;
+  }
+  veil.addEventListener('click', function (e) { if (e.target === veil) close(); });
+  document.addEventListener('keydown', onKey);
+  paint();
+  veil.appendChild(sheet);
+  app.appendChild(veil);
+}
+
+/* ================= start ================= */
+window.__talnaland = {
+  get task() { return session ? session.task : null; },
+  get state() { return state; }
+};
+function start(data) {
+  try {
+    if (data && data.save) { var s = sanitize(data.save); if (s.updated >= state.updated) state = s; }
+  } catch (e) {}
+  renderHome();
+  cloudInit();
+}
+document.addEventListener('touchstart', function () {}, { passive: true });
+var hot = window.claude && window.claude.hot;
+try { if (hot && hot.snapshot) hot.snapshot(function () { return { save: JSON.parse(JSON.stringify(state)) }; }); } catch (e) {}
+if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
+})();
+</script>
+</body>
+</html>
